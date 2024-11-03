@@ -108,3 +108,20 @@ def get_activations(model, x, layer, get_input=False):
     hook.register_hook(module=layer, store_input=get_input)
     model(x)
     return hook.pull()
+
+
+def estimate_model_device(model):
+    """
+    Estimate the device of a given model.
+
+    Args:
+        model: The model to estimate the device of.
+
+    Returns:
+        The device (str) of the model.
+    """
+    from collections import Counter
+
+    device_counts = Counter([str(p.device) for p in model.parameters()])
+    device = device_counts.most_common(1)[0][0]
+    return device
