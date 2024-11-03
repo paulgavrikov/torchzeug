@@ -65,3 +65,46 @@ def unfreeze_module(module):
     """
     for param in module.parameters():
         param.requires_grad = True
+
+
+class LayerHook():
+    
+    def __init__(self):
+        self.storage = None
+        self.hook_handle = None
+
+    def pull(self):
+        if self.hook_handle is not None:
+            self.hook_handle.remove()
+            self.hook_handle = None
+        
+        data = self.storage
+        self.storage = None
+        return data
+
+    def register_hook(self, module, store_input=True):
+        if self.hook_handle is not None:
+            self.hook_handle.remove()
+        self.storage = None
+        def hook(_, inp, out):
+            if store_input:
+                self.storage = inp
+            else:
+                self.storage = out
+        self.hook_handle = module.register_forward_hook(hook)
+
+
+def get_activations(model, x, layer, get_input=False):
+    """
+    Get the activations of a layer.
+
+    Args:
+        model: The model to get the activations from.
+        x: The input to the model.
+        layer: The module to get the activations from.
+        get_input: Whether to get the inputs (True) or outputs (False) to the layer. Default: False.
+    """
+    hook = LayerHook()
+    hook.register_hook(module=layer, store_input=get_input)
+    model(x)
+    return hook.pull()
